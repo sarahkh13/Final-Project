@@ -1,0 +1,299 @@
+---
+title: "Fisheries Fun"
+author: "Sarah Helman"
+date: "February 22, 2015"
+output: html_document
+---
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r, include=FALSE} 
+#FISHERIES DATA SET UP
+setwd("/Users/sarahhelman/Desktop/Sarah/Sea Lion Data/Data Crunching")
+
+fish <- read.csv('/Users/sarahhelman/Desktop/Sarah/Sea Lion Data/Data Crunching/FisheriesDataIII.csv')
+#fish1 <- read.csv('/Users/sarahhelman/Desktop/Sarah/Sea Lion Data/Data Crunching/FisheriesData.csv')
+
+attach(fish)
+names(fish)
+library(ggplot2)
+
+
+#Subset for each year
+fish07 <- subset(fish, YEAR == 2007)
+fish08 <- subset(fish, YEAR == 2008)
+fish09 <- subset(fish, YEAR == 2009)
+fish10 <- subset(fish, YEAR == 2010)
+fish11 <- subset(fish, YEAR == 2011)
+fish12 <- subset(fish, YEAR == 2012)
+fish13 <- subset(fish, YEAR == 2013)
+fish14 <- subset(fish, YEAR == 2014)
+```
+
+
+```{r, include=FALSE}  
+#STRAND DATA SET UP
+strand.data <- read.csv('/Users/sarahhelman/Desktop/Sarah/Sea Lion Data/Data Crunching/1975_2013_DG_Cleaned&Coded.csv', header=T)
+
+## Plotting lepto strands by year ###
+strand.data$Lepto=NA   #create an extra column in primary dataframe that designates lepto status as O, 1 or NA
+strand.data$Lepto[strand.data$Lcode=="L"]=1 #Designates all cases that were lepto positive as 1 in this column
+strand.data$Lepto[strand.data$Lcode!="L"]=0  #All non lepto cases = 0
+temp=aggregate(strand.data$MMCID[strand.data$Lepto==1],list(strand.data$Year[strand.data$Lepto==1]),FUN=length)
+temp.all=aggregate(strand.data$MMCID,list(strand.data$Year),FUN=length)
+temp.all$y=0
+temp.all$y[match(temp$Group.1,temp.all$Group.1)]=temp$x
+
+
+### Creating Monthly Data Frame & Empty Vectors for values of Interest to go inside it ###
+month.data=data.frame(Year=sort(rep(2000:2014,12)),Month=rep(1:12,length(2000:2014)))
+#Creates a data frame with the same dimensions as my fish data frame: here containing the years 2000-2014
+
+month.data$RunMonth=1:length(month.data$Year)   #new column- RunMonth: length of data frame (grey #s on left)
+#Above gives a value for the number of the month (starting from the beginning)
+
+#month.data$quarter.yr = rep(1:90, each=3)   #32= total observations/3- original datas 360 rows
+#month.data$semi.yr = rep(1:45, each = 6)   #origig 60- must be total data/6
+month.data$TStrands=0  #Empty vectors for total strands (a value of interest)
+month.data$LStrands=0  #" ", same as above, continued below
+month.data$TotTons=0
+month.data$TotSard=0
+month.data$TotAnch=0
+month.data$TotMS =0
+month.data$SumTot=0
+
+
+### creating empty vectors for lepto strands by week ###
+week.data=data.frame(Week=1:52)
+week.data$LStrands=0
+
+## subset strand.data to just 1984 to 2013 ##
+strand.data.85 <- subset(strand.data, Year > 1984)
+
+##  Sum the number of Lepto strands by week
+for (i in 1:length(week.data$Week)) {
+  week.data$LStrands[i]=length(strand.data.85$Week.from.start.of.year
+                               [strand.data.85$Week.from.start.of.year==week.data$Week[i]    #Data for correct week
+                                &!is.na(strand.data.85$Week.from.start.of.year) & strand.data.85$Lepto==1])   #Data NOT NA   #Data +ve
+}
+#weeek.data: at start, only a column of weeks up to column number i. 
+#LStrands- making this new column in this data frame   = designates output, same as <- 
+#length of the output in parentheses is value that goes into column. Defined by: 
+#rows in "strand from start of year" column where value is equal to i (ie for each row where data is from that week)
+#AND cant be NA value  #AND in lepto column, value=1 (were lepto cases) #Selects the weeks that we have data for
+
+
+##  Sum the number of strands by month 
+for(i in 1:length(month.data$Year)){
+  month.data$TStrands[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] &  
+                                  strand.data$Month==month.data$Month[i] & !is.na(strand.data$Year) &
+                                    !is.na(strand.data$Month)])
+  month.data$LStrands[i]=length(strand.data$MMCID[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Lepto==1 & !is.na(strand.data$Year) &
+                                    !is.na(strand.data$Month)])
+  }
+
+
+#Fill in Monthly Lepto & Total Strands
+for(i in 1:length(month.data$Year)){
+  month.data$TStrands[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] &
+                                  strand.data$Month==month.data$Month[i] & !is.na(strand.data$Year) &
+                                    !is.na(strand.data$Month)])
+  month.data$LStrands[i]=length(strand.data$MMCID[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Lepto==1 & !is.na(strand.data$Year) &
+                                    !is.na(strand.data$Month)])
+  }
+
+#Fill in Monthly Fishery Data in Month.Data Dataframe
+for(i in 1:length(month.data$Year)){
+  month.data$TotTons[i]=fish$Total.Tonage[fish$YEAR==month.data$Year[i] & fish$MONTH==month.data$Month[i]]
+  month.data$TotSard[i]=fish$PS.Total[fish$YEAR==month.data$Year[i] & fish$MONTH==month.data$Month[i]]
+  month.data$TotAnch[i]=fish$NA.Total[fish$YEAR==month.data$Year[i] & fish$MONTH==month.data$Month[i]]
+  month.data$TotMS[i]=fish$MS.Total[fish$YEAR==month.data$Year[i] & fish$MONTH==month.data$Month[i]]
+  month.data$SumTot[i]=sum(month.data$TotSard[i] + month.data$TotAnch[i] + month.data$TotMS[i])
+  }
+```
+
+
+```{r}  
+##RUNNING THIS CHUNK GIVES YOU TOTAL FOOD SOURCES FOR 2009-2014###
+
+par(mfrow = c(2,3))
+
+#Plot 2014~ All Food Sources 2014
+plot(fish14$MONTH, fish14$Total.Tonage, type="b",pch=21,cex=0.5,bg=1,col=1,lty=1, xlab="Month", ylab="Metric Tons", main="Total Tonnage 2014~ All Food Sourses", lwd=3, cex.lab=1.4, cex.axis=1.1, xaxt="n")  
+axis(1,at=seq(1,12,1),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), cex.axis=1.1, las=2)
+lines(fish14$MONTH, fish14$MS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=3, bty="l", lwd=2)
+lines(fish14$MONTH, fish14$PS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=4, bty="l", lwd=2)
+lines(fish14$MONTH, fish14$NA.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=2, bty="l", lwd=2)
+legend("topleft", lty= c(1,2,2,2), lwd=3, legend = c("Total", "Market Squid", "Pacific Sardines", "Northern Anchovies"), border="black", col=c(1,3,4,2), cex=0.75, par(font=2), title="Food Source")
+
+
+#Plot 2013~ All Food Sources 
+plot(fish13$MONTH, fish13$Total.Tonage, type="b",pch=21,cex=0.5,bg=1,col=1,lty=1, xlab="Month", ylab="Metric Tons", main="Total Tonnage 2013~ All Food Sourses", lwd=3, cex.lab=1.4, cex.axis=1.1, xaxt="n")  
+axis(1,at=seq(1,12,1),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), cex.axis=1.1, las=2)
+lines(fish13$MONTH, fish13$MS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=3, bty="l", lwd=2)
+lines(fish13$MONTH, fish13$PS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=4, bty="l", lwd=2)
+lines(fish13$MONTH, fish13$NA.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=2, bty="l", lwd=2)
+legend("topleft", lty= c(1,2,2,2), lwd=3, legend = c("Total", "Market Squid", "Pacific Sardines", "Northern Anchovies"), border="black", col=c(1,3,4,2), cex=0.75, par(font=2), title="Food Source")
+
+
+#Plot 2012~ All Food Sources 
+plot(fish12$MONTH, fish12$Total.Tonage, type="b",pch=21,cex=0.5,bg=1,col=1,lty=1, xlab="Month", ylab="Metric Tons", main="Total Tonnage 2012~ All Food Sourses", lwd=3, cex.lab=1.4, cex.axis=1.1, xaxt="n")  
+axis(1,at=seq(1,12,1),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), cex.axis=1.1, las=2)
+lines(fish12$MONTH, fish12$MS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=3, bty="l", lwd=2)
+lines(fish12$MONTH, fish12$PS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=4, bty="l", lwd=2)
+lines(fish12$MONTH, fish12$NA.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=2, bty="l", lwd=2)
+legend("topleft", lty= c(1,2,2,2), lwd=3, legend = c("Total", "Market Squid", "Pacific Sardines", "Northern Anchovies"), border="black", col=c(1,3,4,2), cex=0.75, par(font=2), title="Food Source")
+
+
+#Plot 2011~ All Food Sources 
+plot(fish11$MONTH, fish11$Total.Tonage, type="b",pch=21,cex=0.5,bg=1,col=1,lty=1, xlab="Month", ylab="Metric Tons", main="Total Tonnage 2011~ All Food Sourses", lwd=3, cex.lab=1.4, cex.axis=1.1, xaxt="n")  
+axis(1,at=seq(1,12,1),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), cex.axis=1.1, las=2)
+lines(fish11$MONTH, fish11$MS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=3, bty="l", lwd=2)
+lines(fish11$MONTH, fish11$PS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=4, bty="l", lwd=2)
+lines(fish11$MONTH, fish11$NA.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=2, bty="l", lwd=2)
+legend("topleft", lty= c(1,2,2,2), lwd=3, legend = c("Total", "Market Squid", "Pacific Sardines", "Northern Anchovies"), border="black", col=c(1,3,4,2), cex=0.75, par(font=2), title="Food Source")
+
+
+
+#Plot 2010~ All Food Sources 
+plot(fish10$MONTH, fish10$Total.Tonage, type="b",pch=21,cex=0.5,bg=1,col=1,lty=1, xlab="Month", ylab="Metric Tons", main="Total Tonnage 2010~ All Food Sourses", lwd=3, cex.lab=1.4, cex.axis=1.1, xaxt="n")  
+axis(1,at=seq(1,12,1),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), cex.axis=1.1, las=2)
+lines(fish10$MONTH, fish10$MS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=3, bty="l", lwd=2)
+lines(fish10$MONTH, fish10$PS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=4, bty="l", lwd=2)
+lines(fish10$MONTH, fish10$NA.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=2, bty="l", lwd=2)
+legend("topleft", lty= c(1,2,2,2), lwd=3, legend = c("Total", "Market Squid", "Pacific Sardines", "Northern Anchovies"), border="black", col=c(1,3,4,2), cex=0.75, par(font=2), title="Food Source")
+
+
+#Plot 2009~ All Food Sources 
+plot(fish09$MONTH, fish09$Total.Tonage, type="b",pch=21,cex=0.5,bg=1,col=1,lty=1, xlab="Month", ylab="Metric Tons", main="Total Tonnage 2009~ All Food Sourses", lwd=3, cex.lab=1.4, cex.axis=1.1, xaxt="n")  
+axis(1,at=seq(1,12,1),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), cex.axis=1.1, las=2)
+lines(fish11$MONTH, fish09$MS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=3, bty="l", lwd=2)
+lines(fish11$MONTH, fish09$PS.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=4, bty="l", lwd=2)
+lines(fish11$MONTH, fish09$NA.Total, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=2, bty="l", lwd=2)
+legend("topleft", lty= c(1,2,2,2), lwd=3, legend = c("Total", "Market Squid", "Pacific Sardines", "Northern Anchovies"), border="black", col=c(1,3,4,2), cex=0.75, par(font=2), title="Food Source")
+
+```
+
+
+
+
+```{r}
+par(mfrow = c(1,1))
+
+Food <- function(i) {
+
+month.data.yr <- subset(month.data, Year == i) 
+
+plot(month.data.yr$Month, month.data.yr$TotTons, type="b",pch=21,cex=0.5,bg=1,col=1,lty=1, xlab="Month", ylab="Metric Tons", main=paste("Total Tonnage~ All Food Sources",i), lwd=3, cex.lab=1.4, cex.axis=1.1, xaxt="n", ylim=c(0,max(month.data$TotTons)))  
+axis(1,at=seq(1,12,1),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), cex.axis=1.1, las=2)
+lines(month.data.yr$Month, month.data.yr$TotMS, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=3, bty="l", lwd=2)
+lines(month.data.yr$Month, month.data.yr$TotSard, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=4, bty="l", lwd=2)
+lines(month.data.yr$Month, month.data.yr$TotAnch, type="l", lty= 2, pch=21,cex=0.5,bg=1,col=2, bty="l", lwd=2)
+
+legend("topleft", lty= c(1,2,2,2), lwd=3, legend = c("Total", "Market Squid", "Pacific Sardines", "Northern Anchovies"), border="black", col=c(1,3,4,2), cex=0.75, par(font=2), title="Food Source")
+}
+
+
+
+#Plot 6 Food Years Together: 
+FoodYrs <- function(aa, bb, cc, dd, ee, ff) 
+  {
+par(mfrow = c(2,3))
+Food(aa)
+Food(bb)
+Food(cc)
+Food(dd)
+Food(ee)
+Food(ff)
+}
+
+```
+
+```{r}
+FoodYrs(2014, 2013, 2012, 2011, 2010, 2009)
+```
+
+
+```{r}
+FoodYrs(2009, 2008, 2007, 2006, 2005, 2004)
+```
+
+```{r}
+FoodYrs(2006, 2004, 2003, 2002, 2001, 2000)
+```
+
+```{r}
+quartz()
+FoodYrs(2013, 2012, 2011, 2010, 2009, 2008)
+
+```
+
+
+
+```{r}
+#Function to Plot Total Strands, Lepto Strands and Total Food by Year
+
+par(mfrow = c(1,1))
+
+monthFxn <- function(i) {
+
+month.data.yr <- subset(month.data, Year == i)
+
+#Plot 2014~ All Food Sources 2014
+par(mar=c(5,5,5,5))
+plot(month.data.yr$Month, month.data.yr$TotTons, type="l", col=1, lty=1, xlab="Month", ylab="Metric Tons", main=paste("Total Food vs. Number of Strands in", i), lwd=2, cex.lab=1.4, cex.axis=1, xaxt="n", yaxs = "r", ylim=c(0,max(month.data$TotTons)))  
+axis(1,at=seq(1,12,1),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"), cex.axis=1, las=2)
+
+#Overlay strand data
+par(new = TRUE)
+plot(month.data.yr$Month, month.data.yr$TStrands, type = "b", pch=15, cex= 0.7, axes = FALSE,  yaxs = "r", bty = "n", xlab = "", ylab = "", col=2, ylim=c(0,max(month.data$TStrands)))
+lines(month.data.yr$Month, month.data.yr$LStrands, type="b", pch=15, cex= 0.7, bg= 2, bty = "n", col=4)
+
+axis(side=4, ylim=c(0,max(month.data$TStrands)))
+mtext("Number of Strands", side=4, line=4, cex=0.9, font=2)
+
+legend("topleft", lty= c(1,2,2), lwd=3, legend = c("Total Food Tonnage", "Total Strands", "Lepto Strands"), border="black", col=c(1,2,4), cex=0.8, par(font=2), title="Index")
+
+}
+
+
+```
+
+
+
+```{r}
+#Function to plot 6 years of Interest: Total Tonnage Food vs Strands/Lepto Strands
+
+Plot6 <- function(aa, bb, cc, dd, ee, ff) {
+  par(mfrow = c(2,3))
+monthFxn(aa)
+monthFxn(bb)
+monthFxn(cc)
+monthFxn(dd)
+monthFxn(ee)
+monthFxn(ff)
+}
+
+```
+
+
+
+```{r}
+Plot6(2014, 2013, 2012, 2011, 2010, 2009)
+```
+
+
+```{r}
+Plot6(2009, 2008, 2007, 2006, 2005, 2004)
+```
+
+```{r}
+Plot6(2005, 2004, 2003, 2002, 2001, 2000)
+```
+
+
+
