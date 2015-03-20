@@ -1,0 +1,414 @@
+---
+title: "Blubber & Food"
+author: "Sarah Helman"
+date: "February 13, 2015"
+output: html_document
+---
+
+
+```{r}
+setwd("/Users/sarahhelman/Desktop/Sarah/Sea Lion Data/Data Crunching")
+fish <- read.csv('/Users/sarahhelman/Desktop/Sarah/Sea Lion Data/Data Crunching/FisheriesDataIII.csv')
+#fish1 <- read.csv('/Users/sarahhelman/Desktop/Sarah/Sea Lion Data/Data Crunching/FisheriesData.csv')
+
+attach(fish)
+names(fish)
+
+strand.data <- read.csv('/Users/sarahhelman/Desktop/Sarah/Sea Lion Data/Data Crunching/1975_2013_DG_Cleaned&Coded.SHII.csv', header=T)
+strand.data.85 <- subset(strand.data, Year > 1984)
+
+strand.data$Lepto=0
+strand.data$Lepto[strand.data$Lcode=="L"]=1
+strand.data$Blubber=0 
+strand.data$Blubber[strand.data$Blub>=0]=1
+
+
+### creating empty vectors for lepto strands by week ###
+week.data=data.frame(Week=1:52)
+week.data$LStrands=0
+week.data$Blubber = 0
+week.data$TotalStrands = 0
+
+strand.data00 <- subset(strand.data, Year > 1999)  
+
+month.data=data.frame(Year=sort(rep(2000:2014,12)),Month=rep(1:12,length(2000:2014)))
+month.data$RunMonth=1:length(month.data$Year)   #new column- RunMonth: length of data frame (grey #s on left)
+month.data$quarter.yr = rep(1:60, each=3)   #32= total observations/3- original datas 360 rows
+month.data$semi.yr = rep(1:30, each = 6)   #origig 60- must be total data/6
+month.data$TStrands=0
+month.data$LStrands=0
+month.data$TotTons=0
+month.data$TotSard=0
+month.data$TotAnch=0
+month.data$TotMS =0
+month.data$SumTot=0
+month.data$MonthBlub=0
+month.data$BlubMean=0
+
+#Month data total strands by age class
+month.data$TSAdult=0
+month.data$TSSubadult=0
+month.data$TSJuvenile=0
+month.data$TSYearling=0
+month.data$TSPup=0
+month.data$TSSum=0
+
+
+#Month data lepto strands age class
+month.data$LSAdult=0
+month.data$LSSubadult=0
+month.data$LSJuvenile=0
+month.data$LSYearling=0
+month.data$LSPup=0
+month.data$LSSum=0
+#month.data=data.frame(Month=1:12)
+#month.data$AVERAGE.ALL.YEARS=0
+
+attach(month.data)
+attach(strand.data)
+
+##  Sum the number of Lepto strands by week
+for (i in 1:length(week.data$Week)) {
+  week.data$LStrands[i]=length(strand.data.85$Week.from.start.of.year
+                               [strand.data.85$Week.from.start.of.year==week.data$Week[i]    #Data that week
+                                &!is.na(strand.data.85$Week.from.start.of.year) & strand.data.85$Lepto==1])   #Data NOT NA   #Data +ve
+}
+#weeek.data: at start, only a column of weeks up to column number i. 
+#LStrands- making this new column in this data frame   = designates output, same as <- 
+#length of the output in parentheses is value that goes into column. Defined by: 
+#rows in "strand from start of year" column where value is equal to i (ie for each row where data is from that week)
+#AND cant be NA value    #AND in lepto column, value=1 (were lepto cases)
+#Selects the weeks that we have data for
+
+
+
+
+#FILL IN THE MONTH DATA FRAME##
+
+##  Sum the number of strands & Blubber means by month 
+for(i in 1:length(month.data$Year)){
+  month.data$TStrands[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] &
+                                  strand.data$Month==month.data$Month[i] & !is.na(strand.data$Year) &
+                                    !is.na(strand.data$Month)])
+  
+  month.data$LStrands[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Lepto==1 & !is.na(strand.data$Year) & !is.na(strand.data$Month)]) 
+  
+  month.data$MonthBlub[i]=(sum(strand.data$Blub[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Blubber==1 & !is.na(strand.data$Year) & !is.na(strand.data$Month)])/
+                             length(strand.data$Blub[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Blubber==1 & !is.na(strand.data$Year) & !is.na(strand.data$Month)]))
+  #Used sum/length to get average bluber by month. Compared to mean below: 
+  
+  month.data$BlubMean[i]=(mean(strand.data$Blub[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Blubber==1 & !is.na(strand.data$Year) & !is.na(strand.data$Month)]))
+  #Mean blub gives same value- bonus  :) 
+  }
+#New for loop portion added above to fill in monthly blubber:
+#Gets the mean of cases that HAD blubber information, where year and month was the same/not missing
+
+
+
+#leptoJuv <- strand.data[strand.data$Age==“Adult”,]
+#AdultData<- subset(strand.data, Age$Adults)
+
+##FILL IN AGE CLASS TOTAL STRANDS##
+for(i in 1:length(month.data$Year)){
+  month.data$TSAdult[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Age=="Adult" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  month.data$TSSubadult[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Age=="Subadult" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  month.data$TSPup[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Age=="Pup" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  month.data$TSJuvenile[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Age=="Juvenile" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  month.data$TSYearling[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                                  strand.data$Age=="Yearling" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  }
+
+
+#Fill in sum- Just using this column to compare to Total Strand numbers and ensure they are the same & didnt miss any age classes
+for(i in 1:length(month.data$Year)){
+ month.data$TSSum[i]=sum(month.data$TSAdult[i] + month.data$TSSubadult[i] + month.data$TSPup[i] + month.data$TSJuvenile[i] + month.data$TSYearling[i]) 
+  }
+
+
+
+#Fill in age class lepto strands
+for(i in 1:length(month.data$Year)){
+  month.data$LSAdult[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                          strand.data$Lepto==1 & strand.data$Age=="Adult" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  month.data$LSSubadult[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                         strand.data$Lepto==1 & strand.data$Age=="Subadult" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  month.data$LSPup[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                         strand.data$Lepto==1 & strand.data$Age=="Pup" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  month.data$LSJuvenile[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                    strand.data$Lepto==1 & strand.data$Age=="Juvenile" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  month.data$LSYearling[i]=length(strand.data$Year[strand.data$Year==month.data$Year[i] & strand.data$Month==month.data$Month[i] &
+                strand.data$Lepto==1 & strand.data$Age=="Yearling" & !is.na(strand.data$Year) & !is.na(strand.data$Month) & !is.na(strand.data$Age)]) 
+  }
+
+
+#Fill in sum- Just using this column to compare to Total Strand numbers and ensure they are the same & didnt miss any age classes
+for(i in 1:length(month.data$Year)){
+ month.data$LSSum[i]=sum(month.data$LSAdult[i] + month.data$LSSubadult[i] + month.data$LSPup[i] + month.data$LSJuvenile[i] + month.data$LSYearling[i]) 
+  }
+
+
+
+
+#Fill in Monthly Fishery Data in Month.Data Dataframe
+for(i in 1:length(month.data$Year)){
+  month.data$TotTons[i]=fish$Total.Tonage[fish$YEAR==month.data$Year[i] & fish$MONTH==month.data$Month[i]]
+  month.data$TotSard[i]=fish$PS.Total[fish$YEAR==month.data$Year[i] & fish$MONTH==month.data$Month[i]]
+  month.data$TotAnch[i]=fish$NA.Total[fish$YEAR==month.data$Year[i] & fish$MONTH==month.data$Month[i]]
+  month.data$TotMS[i]=fish$MS.Total[fish$YEAR==month.data$Year[i] & fish$MONTH==month.data$Month[i]]
+  month.data$SumTot[i]=sum(month.data$TotSard[i] + month.data$TotAnch[i] + month.data$TotMS[i])
+  }
+
+```
+
+
+
+
+```{r}
+###BOX PLOTS OF FOOD, STRANDS AND BLUB MEAN BY YEAR###
+
+Years0813 <- subset(month.data, Year > 2007 & Year <2014)
+#Blubber total by year- all classes
+jpeg("Blub_Mean_Year.jpeg",res=200,width=7,height=4,units="in")
+
+
+
+boxplot(BlubMean~Year, data=month.data, main="Blubber Mean By Year", xlab="Year", ylab="Blubber", col=c(6,2,3,4,5,7))
+
+
+boxplot(TStrands~Year, data=Years0813, main="Total Strands By Year", xlab="Year", ylab="Blubber", col=c(6,2,3,4,5,7))
+
+
+boxplot(TotTons~Year, data=Years0813, main="Total Fish Catch By Year", xlab="Year", ylab="Blubber", col=c(6,2,3,4,5,7))
+
+
+boxplot(TotTons~Year, data=Years0813, main="Total Fish Catch By Year", xlab="Year", ylab="Blubber", col=c(6,2,3,4,5,7))
+
+Ages <- subset(strand.data, Age == "Juvenile" | Age == "Adult" | Age == "Subdult" | Age == "Pup" | Age == "Yearling")
+
+
+boxplot(Ages$Blub~Ages$Age, main= "Blubber by Age Class", col=c(7,2,3,4,5), xlab= "Age Class", ylab="Blubber Depth")
+#Similar spread for blubber in Adults, Juveniles and Subadults, so made them those 3 categories "Big" and Yearlings/Pups smaller "Babes"
+
+```
+
+
+
+
+
+```{r}
+strandJuv <- subset(strand.data, Age == "Juvenile")
+strandAdult <- subset(strand.data, Age == "Adult")
+strandPup <- subset(strand.data, Age == "Pup")
+strandYrl <- subset(strand.data, Age == "Yearling")
+strandSub <- subset(strand.data, Age == "Subadult")
+strandAdSub <- subset(strand.data, Age == "Subadult" | Age == "Adult")
+
+
+Big  <- subset(strand.data, Age == "Subadult" | Age == "Adult" | Age =="Juvenile")
+Babes <- subset(strand.data, Age == "Pup" | Age == "Yearling")
+BabesBoys <- subset(Babes, Sex == "Male")
+BabesGirls  <- subset(Babes, Sex == "Female")
+BigBoys <- subset(Big, Sex == "Male")
+BigGirls <- subset(Big, Sex == "Female")
+
+```
+
+
+```{r}
+#COMPARING AGE CLASSES & BLUBBER: ADULTS/SUBADULTS VS Juv/Pups/Yearlings
+par(mfrow = c(1,2))
+
+boxplot(Blub~Year, data=Babes, main= "Blubber ~ Juveniles, Pups & Yearlings ", xlab="Year", ylab="Blubber Depth", ylim=c(0,35), na.action = NULL, varwidth=TRUE, col=c(1,2,3,4,5,6))
+
+par(mfrow = c(1,2))
+boxplot(Blub~Year, data=month.data, main= "Blubber ~ Adults & Subadults", ylim=c(0,35), xlab="Year", ylab="Blubber Depth", na.action = NULL, varwidth=TRUE, col=c(1,2,3,4,5,6))
+#varwidth=TRUE: makes box plot widths proportional to the square root of the sample sizes
+#par(new = TRUE)
+lines(month.data$Year, month.data$TStrands, type="b", pch=15, cex= 0.7, bg= 2, bty = "n", col=4)
+axis(side=4, ylim=c(0,max(month.data$TStrands)))
+mtext("Number of Strands", side=4, line=4, cex=0.9, font=2)
+
+
+summary(Big)
+summary(Babes)
+
+
+#COMPARING ADULT BOYS & GIRLS: ALL DATA >1985
+par(mfrow = c(1,2))
+boxplot(Blub ~ Year, data=BigBoys, main= "Blubber ~ Adult & Subadult Males", xlab="Year", ylab="Blubber Depth", na.action = NULL, varwidth=TRUE, col=c(1,2,3,4,5,6))
+#varwidth=TRUE: makes box plot widths proportional to the square root of the sample sizes
+
+boxplot(Blub ~ Year, data=BigGirls, main= "Blubber ~ Adult & Subadult Females", xlab="Year", ylab="Blubber Depth", na.action = NULL, varwidth=TRUE, col=c(1,2,3,4,5,6))
+
+
+```
+
+
+
+
+
+
+
+YEAR 2009
+```{r}
+#BLUBBER & FOOD 2009: 
+par(mfrow = c(2,2))
+  
+strand.data09 <- subset(strand.data, Year == 2009)
+  
+for (i in 1:52) {
+week.data$Blubber[i]=length(strand.data09$Week.from.start.of.year
+      [strand.data09$Week.from.start.of.year==week.data$Week[i] 
+       &!is.na(strand.data09$Week.from.start.of.year) & strand.data09$Blubber==1])    
+  }
+  
+
+ 
+#1st GRAPH: WEEKLY Blubber data VS Market Squid#  
+
+{
+par(mar=c(3,5,5,5))
+plot(week.data$Week,week.data$Blub,type="l",pch=21,cex=0.5,bg=1,col=2,lty=1,
+xlab="Month", main= "Blubber vs Squid", ylab="Weekly Blubber", lwd=3,cex.lab=1.5,cex.axis=1.25,xaxt="n", bty="u")
+  axis(1,at=seq(1,52,4.33),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+       cex.axis=1.25, las=2)
+  
+
+
+par(mar=c(3,5,5,5),new=T)
+plot(0,0, col=1,axes=F,ylim=c(0,25000),xlim=c(1,12), ylab= "", xlab= "")
+axis(4,at=round(seq(0,40000,5000)))
+mtext("Metric Tons",side=4,line=3)
+ 
+
+for (ii in 1:12) {
+  month.data$AVERAGE.ALL.YEARS[ii]=length(fish$Month.From.Start
+                               [fish$Month.From.Start==month.data$Week[ii] 
+                                &!is.na(fish$Month.From.Start) & fish$X2009.2==1])    
+}
+
+
+for(ii in 1:12){
+  aa=na.omit(as.numeric(as.matrix(fish$X2009.2[fish$Month.From.Start==ii])))
+  points(rep(ii,length(aa)),aa)
+  
+}
+
+}
+
+ 
+  
+#2nd GRAPH: MEAN WEEKLY BLUBBER PTS VS PACIFIC SARDINE#
+
+{
+  par(mar=c(3,5,5,5))
+  plot(week.data$Week,week.data$Blub,type="l",pch=21,cex=0.5,bg=1,col=2,lty=1,
+       xlab="Month", main="Blubber vs Sardines", ylab="Weekly Blubber", lwd=3,cex.lab=1.5,cex.axis=1.25,xaxt="n", bty="u")
+  axis(1,at=seq(1,52,4.33),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+       cex.axis=1.25, las=2)
+  
+  
+  par(mar=c(3,5,5,5),new=T)
+  plot(0,0, col=1,axes=F,ylim=c(0,25000),xlim=c(1,12), ylab= "", xlab= "")
+  axis(4,at=round(seq(0,40000,5000)))
+  mtext("Metric Tons",side=4,line=3)
+  
+  
+  for (ii in 1:12) {
+  month.data$X2009.1[ii]=length(fish$Month.From.Start
+                               [fish$Month.From.Start==month.data$Week[ii] 
+                                &!is.na(fish$Month.From.Start) & fish$X2009.1==1])    
+}
+
+  
+  for(ii in 1:12){
+    aa=na.omit(as.numeric(as.matrix(fish$X2009.1[fish$Month.From.Start==ii])))
+    points(rep(ii,length(aa)),aa)
+    
+  }
+  
+}
+
+
+
+
+#3rd GRAPH: MEAN WEEKLY BLUBBER PTS VS Northern Anchovy#
+{
+  par(mar=c(3,5,5,5))
+  plot(week.data$Week,week.data$Blub,type="l",pch=21,cex=0.5,bg=1,col=2,lty=1,
+       xlab="Month", main="Blubber vs Anchovies", ylab="Weekly Blubber", lwd=3,cex.lab=1.5,cex.axis=1.25,xaxt="n", bty="u")
+  axis(1,at=seq(1,52,4.33),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+       cex.axis=1.25, las=2)
+  
+  
+  par(mar=c(3,5,5,5),new=T)
+  plot(0,0, col=1,axes=F,ylim=c(0,25000),xlim=c(1,12), ylab= "", xlab= "")
+  axis(4,at=round(seq(0,40000,5000)))
+  mtext("Metric Tons",side=4,line=3)
+  
+
+  for (ii in 1:12) {
+  month.data$X2009[ii]=length(fish$Month.From.Start
+                               [fish$Month.From.Start==month.data$Week[ii] 
+                                &!is.na(fish$Month.From.Start) & fish$X2009==1])    
+}
+
+  
+  
+for(ii in 1:12) {
+    aa=na.omit(as.numeric(as.matrix(fish$X2009[fish$Month.From.Start==ii])))
+    points(rep(ii,length(aa)),aa)
+    
+  }
+}
+
+
+
+
+
+
+#4th GRAPH: Blubber vs all food#
+{
+par(mar=c(3,5,5,5))
+plot(week.data$Week,week.data$Blub,type="l",pch=21,cex=0.5,bg=1,col=2,lty=1,
+       xlab="Month", main="Blubber vs. Total Food", ylab="Weekly Blubber", lwd=3,cex.lab=1.5,cex.axis=1.25,xaxt="n", bty="u")
+  axis(1,at=seq(1,52,4.33),labels=c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"),
+       cex.axis=1.25, las=2)
+}
+
+ # par(mar=c(3,5,5,5),new=T)
+  #plot(0,0, col=1,axes=F,ylim=c(0,25000),xlim=c(1,12), ylab= "", xlab= "")
+  #axis(4,at=round(seq(0,40000,5000)))
+  #mtext("Metric Tons",side=4,line=3)
+
+plot(0,0,col=0,axes=F,ylim=c(0,max(as.numeric(fish$Tot.09),na.rm=T)),xlim=c(1,52))
+axis(4,at=round(seq(0,max(as.numeric(fish$Tot.09),na.rm=T),max(as.numeric(fish$Tot.09),na.rm=T)/4)))
+mtext("Blubber Depth",side=4,line=3)
+  
+  
+for (ii in 1:12) {
+  month.data$Tot.09[ii]=length(fish$Month.From.Start
+                               [fish$Month.From.Start==month.data$Week[ii] 
+                                &!is.na(fish$Month.From.Start) & fish$Tot.09==1])    
+}
+
+
+  
+  for(ii in 1:12){
+    aa=na.omit(as.numeric(as.matrix(fish$Tot.09[fish$Month.From.Start==ii])))
+    points(rep(ii,length(aa)),aa)
+    
+  }
+  
+}
+
+```
+
